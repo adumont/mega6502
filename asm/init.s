@@ -7,6 +7,6 @@
 _init:
 
 loop:
-    lda GPIO_DATA
-    sta GPIO_DATA
+    lda $2000 ; read port L
+    sta $2000 ; save to port K
     jmp loop

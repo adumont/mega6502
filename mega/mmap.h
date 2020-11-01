@@ -44,3 +44,9 @@ byte    RAM002[RAM002_END-RAM002_START+1];
 #define ROM003_END     0x1BFF
 #define ROM002_START   0x1C00
 #define ROM002_END     0x1FFF
+
+// custom program, includes VECTORS
+#define ROM001_START   0xF000
+#define ROM001_END     0xFFFF
+
+#include "rom.h"

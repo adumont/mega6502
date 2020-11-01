@@ -13,8 +13,9 @@ XXD_ARGS = -i
 	$(CL65) $(CLFLAGS) -o $@ $^ none.lib
 
 %.h: %.bin
-	cp $< /tmp/rom.bin
-	( cd /tmp; $(XXD) $(XXD_ARGS) rom.bin ) > $@
+	#cp $< /tmp/rom.bin
+	#( cd /tmp; $(XXD) $(XXD_ARGS) rom.bin ) > $@
+	xxd -i $< | sed -e "s/unsigned char $*_bin\[\]/const byte rom_bin\[\] PROGMEM/" > $@
 
 clean:
-	-rm -f *.o *.hex *.map *.bin
+	-rm -f *.o *.hex *.map *.bin *.h
