@@ -7,7 +7,8 @@
 // define the pins
 #define CLOCK_PIN   PORTB,7     // if you change this be sure to change the SET(DDRB,7) below
 #define RESET_N_PIN PORTB,6     // if you change this be sure to change the SET(DDRB,6) below
-#define RWB_PIN     PINH,5
+#define RWB_PIN     PINH,5      // digital Pin 8
+#define SYNC_PIN     PINH,6     // digital Pin 9
 
 // artifice to use the pins macros in previous bit manipulation macros
 // see https://stackoverflow.com/questions/64630809/how-to-define-a-macro-of-two-tokens-in-cpp/
@@ -130,7 +131,7 @@ void loop() {
           DATA_OUT = RAM[uP_ADDR - RAM_START];
       } 
 
-      sprintf(tmp, "-- A=%0.4X D=%0.2X %s\n", uP_ADDR, DATA_OUT, (RWB ? "r" : "W" ) );
+      dumpInfo();
       
     } else 
     ////////////////////////////////////////////////////////////
@@ -138,7 +139,7 @@ void loop() {
     {  
       // RWB = LOW => Write: 6502 writting to Data Bus, we read
 
-      sprintf(tmp, "-- A=%0.4X D=%0.2X %s\n", uP_ADDR, DATA_IN, (RWB ? "r" : "W" ) );
+      dumpInfo();
 
       if ( uP_ADDR == 0x2000 ) {
         PORTK = DATA_IN;
@@ -171,9 +172,12 @@ void loop() {
   delay(DELAY);
 }
 
-
 ISR(TIMER1_COMPA_vect) {
 
+}
+
+void dumpInfo() {
+  sprintf(tmp, "%0.4X %0.2X %s %d\n", uP_ADDR, DATA_OUT, (RWB ? "r" : "W" ), _READ(SYNC_PIN) );
 }
 
 void setupTimer1() {
