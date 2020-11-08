@@ -15,7 +15,11 @@ CACHE_PATH ?= $(CURDIR)/.cache
 
 SOURCES := $(wildcard *.c *.cpp *.h *.ino *.pde)
 
-.DEFAULT_GOAL:=$(BUILD_PATH)/$(INO_FILE).elf
+USBP := $(wildcard /dev/ttyUSB? )
+
+.DEFAULT_GOAL:=build
+
+build: $(BUILD_PATH)/$(INO_FILE).elf
 
 $(BUILD_PATH)/$(INO_FILE).elf: $(SOURCES)
 	mkdir -p $(BUILD_PATH) $(CACHE_PATH)
@@ -36,6 +40,13 @@ $(BUILD_PATH)/$(INO_FILE).elf: $(SOURCES)
 		-ide-version=10806 \
 		-prefs=build.warn_data_percentage=75 \
 		$(INO_FILE)
+
+$(BUILD_PATH)/$(INO_FILE).hex: $(BUILD_PATH)/$(INO_FILE).elf
+
+flash: $(BUILD_PATH)/$(INO_FILE).hex
+	$(ARDUINO_DIR)/hardware/tools/avr/bin/avrdude \
+    -C$(ARDUINO_DIR)/hardware/tools/avr/etc/avrdude.conf \
+    -v -patmega2560 -cwiring -P$(USBP) -b115200 -D -Uflash:w:$(<):i
 
 clean:
 	rm -rf $(BUILD_PATH) $(CACHE_PATH)
