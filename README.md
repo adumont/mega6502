@@ -6,6 +6,7 @@
 - [Disassembling on the fly](#disassembling-on-the-fly)
   - [Example of `serialHost.py` output](#example-of-serialhostpy-output)
 - [Credits](#credits)
+- [Reference](#reference)
 
 ![](imgs/mega6502.jpg)
 
@@ -96,3 +97,8 @@ Section to be completed.
 - Ben Eater's 6502 project, site and videos
 - Retroshield site and sources
 - Easy6502 disassembler
+
+# Reference
+
+- [W65c02s Datasheet, February 2004](http://datasheets.chipdb.org/Western%20Design/W65C02S.pdf)
+- [W65c02s Datasheet, February 2020](https://www.westerndesigncenter.com/wdc/documentation/w65c02s.pdf)
