@@ -10,12 +10,13 @@ XXD_ARGS = -i
 	$(HEXDUMP) $(HEXDUMP_ARGS) $< > $@
 
 %.bin: %.s interrupt.s vectors.s copydata.s
-	$(CL65) $(CLFLAGS) -o $@ $^ none.lib
+	$(CL65) $(CLFLAGS) -Ln $*.lbl -o $@ $^ none.lib
 
 %.h: %.bin
 	#cp $< /tmp/rom.bin
 	#( cd /tmp; $(XXD) $(XXD_ARGS) rom.bin ) > $@
 	xxd -i $< | sed -e "s/unsigned char $*_bin\[\]/const byte rom_bin\[\] PROGMEM/" > $@
+	cp $@ ../mega/rom.h
 
 clean:
-	-rm -f *.o *.hex *.map *.bin *.h
+	-rm -f *.o *.hex *.map *.bin *.h *.lbl
