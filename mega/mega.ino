@@ -46,6 +46,8 @@ byte uP_DATA = 0;
 
 char tmp[100];
 
+byte serial_stat_reg = 0x00;
+
 void setup() {
   Serial.begin(115200);
   // Set directions
@@ -120,6 +122,17 @@ void loop() {
         DATA_DIR = DIR_OUT;
         DATA_OUT = PINF;
       }
+      // Serial Buffer
+      else if ( uP_ADDR == SERIAL_STAT ) {
+        DATA_DIR = DIR_OUT;
+        DATA_OUT = serial_stat_reg;
+      }
+      else if ( uP_ADDR == SERIAL_DATA ) {
+        if ( READ(serial_stat_reg, 3) ) {
+          DATA_DIR = DIR_OUT;
+          DATA_OUT = Serial.read();
+        }
+      }
       // ROM001
       else if ( (ROM001_START <= uP_ADDR) && (uP_ADDR <= ROM001_END) ) {
           DATA_DIR = DIR_OUT;
@@ -144,6 +157,11 @@ void loop() {
       if ( uP_ADDR == 0x2000 ) {
         PORTK = DATA_IN;
       }
+      // Serial Buffer
+      else if ( uP_ADDR == SERIAL_DATA ) {
+        char c = DATA_IN; // data passed by 6502 to be written to Serial buffer
+        Serial.write(c);
+      }
       // RAM?
       else if ( (uP_ADDR <= RAM_END) && (RAM_START <= uP_ADDR) ) {
         RAM[uP_ADDR - RAM_START] = DATA_IN;
@@ -161,7 +179,7 @@ void loop() {
       
     }
     
-    Serial.write(tmp);
+    //Serial.write(tmp);
 
   } else 
   ////////////////////////////////////////////////////////////
@@ -170,6 +188,20 @@ void loop() {
     DATA_DIR = DIR_IN;
   }
   delay(DELAY);
+
+  // ABOVE THIS SHOULD GO TO INTERUPT ISR...
+
+  // ------------------------
+  
+  // this below should stay in loop()
+
+  if (Serial.available()) {
+    SET(serial_stat_reg, 3);
+  } else {
+    CLEAR(serial_stat_reg, 3);
+  }
+
+
 }
 
 ISR(TIMER1_COMPA_vect) {
