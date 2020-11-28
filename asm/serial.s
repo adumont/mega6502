@@ -17,6 +17,8 @@
 _init:
     cli ; clear the interrupt-disable bit so the processor will respond to interrupts
     cld ; and clear the D flag
+    ldx #$FF
+    txs
 
 _start:
     jsr getc
