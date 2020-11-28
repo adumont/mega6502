@@ -54,7 +54,8 @@ while True:
         if miss >= 0:
             print("%s | %s" % (ser_line, render_instr(instr) ))
         else:
-            print("%s | %s" % (ser_line, 36*" "+ "Not an instruction" ))
+            #print("%s | %s" % (ser_line, 36*" "+ "Not an instruction" ))
+            print("%s |" % (ser_line))
 
         # 
 
