@@ -47,6 +47,7 @@ byte uP_DATA = 0;
 char tmp[100];
 
 byte serial_stat_reg = 0x00;
+byte data_bus;
 
 void setup() {
   Serial.begin(115200);
@@ -101,50 +102,43 @@ void loop() {
       // we should only drive the data bus (DATA_DIR = DIR_OUT)
       // iff we own the range addressed
 
-//      if( uP_ADDR == 0xfffc ) { 
-//        // change DATA port to output to 6502:
-//        DATA_DIR = DIR_OUT;
-//
-//        DATA_OUT = 0xCC; 
-//      } else if( uP_ADDR == 0xfffd ) {
-//        // change DATA port to output to 6502:
-//        DATA_DIR = DIR_OUT;
-//
-//        DATA_OUT = 0xDD;
-//      } else {
-//        // change DATA port to output to 6502:
-//        DATA_DIR = DIR_OUT;
-//
-//        DATA_OUT = 0xEA;
-//      }
-
       if ( uP_ADDR == 0x2000 ) {
         DATA_DIR = DIR_OUT;
-        DATA_OUT = PINF;
+        data_bus = PINF;
+        DATA_OUT = data_bus;
       }
       // Serial Buffer
       else if ( uP_ADDR == SERIAL_STAT ) {
         DATA_DIR = DIR_OUT;
-        DATA_OUT = serial_stat_reg;
+        data_bus = serial_stat_reg;
+        DATA_OUT = data_bus;
       }
       else if ( uP_ADDR == SERIAL_DATA ) {
         if ( READ(serial_stat_reg, 3) ) {
           DATA_DIR = DIR_OUT;
-          DATA_OUT = Serial.read();
+          data_bus = Serial.read();
+          DATA_OUT = data_bus;
         }
       }
       // ROM001
       else if ( (ROM001_START <= uP_ADDR) && (uP_ADDR <= ROM001_END) ) {
           DATA_DIR = DIR_OUT;
-          DATA_OUT = pgm_read_byte_near( rom_bin + (uP_ADDR - ROM001_START));
+          data_bus = pgm_read_byte_near( rom_bin + (uP_ADDR - ROM001_START));
+          DATA_OUT = data_bus;
+          
+          // debug
+          //sprintf(tmp, "sending data from rom at %0.4X: %0.2X %0.2X\n", uP_ADDR, DATA_OUT, data_bus );
+          //Serial.println(tmp);
+          // fin debug
       }
       // RAM
       else if ( (RAM_START <= uP_ADDR) && (uP_ADDR <= RAM_END) ) {
           DATA_DIR = DIR_OUT;
-          DATA_OUT = RAM[uP_ADDR - RAM_START];
-      } 
+          data_bus = RAM[uP_ADDR - RAM_START];
+          DATA_OUT = data_bus;
+      }
 
-      dumpInfo();
+      //dumpInfo();
       
     } else 
     ////////////////////////////////////////////////////////////
@@ -152,34 +146,37 @@ void loop() {
     {  
       // RWB = LOW => Write: 6502 writting to Data Bus, we read
 
-      dumpInfo();
+      data_bus = DATA_IN;
+
+      //dumpInfo();
 
       if ( uP_ADDR == 0x2000 ) {
-        PORTK = DATA_IN;
+        PORTK = data_bus;
       }
       // Serial Buffer
       else if ( uP_ADDR == SERIAL_DATA ) {
-        char c = DATA_IN; // data passed by 6502 to be written to Serial buffer
+        char c = data_bus; // data passed by 6502 to be written to Serial buffer
         Serial.write(c);
       }
       // RAM?
       else if ( (uP_ADDR <= RAM_END) && (RAM_START <= uP_ADDR) ) {
-        RAM[uP_ADDR - RAM_START] = DATA_IN;
+        RAM[uP_ADDR - RAM_START] = data_bus;
       } 
       else
       // RAM002?
       if ( (uP_ADDR <= RAM002_END) && (RAM002_START <= uP_ADDR) ) {
-        RAM002[uP_ADDR - RAM002_START] = DATA_IN;
+        RAM002[uP_ADDR - RAM002_START] = data_bus;
       }
       else
       // RAM003?
       if ( (uP_ADDR <= RAM003_END) && (RAM003_START <= uP_ADDR) ) {
-        RAM002[uP_ADDR - RAM003_START] = DATA_IN;
+        RAM002[uP_ADDR - RAM003_START] = data_bus;
       }
       
     }
     
-    //Serial.write(tmp);
+    // dump info on serial
+    dumpInfo();
 
   } else 
   ////////////////////////////////////////////////////////////
@@ -188,6 +185,7 @@ void loop() {
     DATA_DIR = DIR_IN;
   }
   delay(DELAY);
+
 
   // ABOVE THIS SHOULD GO TO INTERUPT ISR...
 
@@ -209,7 +207,9 @@ ISR(TIMER1_COMPA_vect) {
 }
 
 void dumpInfo() {
-  sprintf(tmp, "%0.4X %0.2X %s %d\n", uP_ADDR, DATA_OUT, (RWB ? "r" : "W" ), _READ(SYNC_PIN) );
+  // sprintf(tmp, "%0.4X %0.2X %s %d\n", uP_ADDR, data_bus, (RWB ? "r" : "W" ), _READ(SYNC_PIN) );
+  sprintf(tmp, "%0.4X %0.2X %s %d\n", uP_ADDR, (RWB ? DATA_OUT : DATA_IN ), (RWB ? "r" : "W" ), _READ(SYNC_PIN) );
+  Serial.write(tmp);
 }
 
 void setupTimer1() {
