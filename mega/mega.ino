@@ -47,7 +47,6 @@ byte uP_DATA = 0;
 char tmp[100];
 
 byte serial_stat_reg = 0x00;
-byte data_bus;
 
 void setup() {
   Serial.begin(115200);
@@ -104,73 +103,57 @@ void loop() {
 
       if ( uP_ADDR == 0x2000 ) {
         DATA_DIR = DIR_OUT;
-        data_bus = PINF;
-        DATA_OUT = data_bus;
+        DATA_OUT = PINF;
       }
       // Serial Buffer
       else if ( uP_ADDR == SERIAL_STAT ) {
         DATA_DIR = DIR_OUT;
-        data_bus = serial_stat_reg;
-        DATA_OUT = data_bus;
+        DATA_OUT = serial_stat_reg;
       }
       else if ( uP_ADDR == SERIAL_DATA ) {
         if ( READ(serial_stat_reg, 3) ) {
           DATA_DIR = DIR_OUT;
-          data_bus = Serial.read();
-          DATA_OUT = data_bus;
+          DATA_OUT = Serial.read();
         }
       }
       // ROM001
       else if ( (ROM001_START <= uP_ADDR) && (uP_ADDR <= ROM001_END) ) {
           DATA_DIR = DIR_OUT;
-          data_bus = pgm_read_byte_near( rom_bin + (uP_ADDR - ROM001_START));
-          DATA_OUT = data_bus;
-          
-          // debug
-          //sprintf(tmp, "sending data from rom at %0.4X: %0.2X %0.2X\n", uP_ADDR, DATA_OUT, data_bus );
-          //Serial.println(tmp);
-          // fin debug
+          DATA_OUT = pgm_read_byte_near( rom_bin + (uP_ADDR - ROM001_START));
       }
       // RAM
       else if ( (RAM_START <= uP_ADDR) && (uP_ADDR <= RAM_END) ) {
           DATA_DIR = DIR_OUT;
-          data_bus = RAM[uP_ADDR - RAM_START];
-          DATA_OUT = data_bus;
+          DATA_OUT = RAM[uP_ADDR - RAM_START];
       }
 
-      //dumpInfo();
-      
     } else 
     ////////////////////////////////////////////////////////////
     // 6502 WRITE
     {  
       // RWB = LOW => Write: 6502 writting to Data Bus, we read
 
-      data_bus = DATA_IN;
-
-      //dumpInfo();
-
       if ( uP_ADDR == 0x2000 ) {
-        PORTK = data_bus;
+        PORTK = DATA_IN;
       }
       // Serial Buffer
       else if ( uP_ADDR == SERIAL_DATA ) {
-        char c = data_bus; // data passed by 6502 to be written to Serial buffer
+        char c = DATA_IN; // data passed by 6502 to be written to Serial buffer
         Serial.write(c);
       }
       // RAM?
       else if ( (uP_ADDR <= RAM_END) && (RAM_START <= uP_ADDR) ) {
-        RAM[uP_ADDR - RAM_START] = data_bus;
+        RAM[uP_ADDR - RAM_START] = DATA_IN;
       } 
       else
       // RAM002?
       if ( (uP_ADDR <= RAM002_END) && (RAM002_START <= uP_ADDR) ) {
-        RAM002[uP_ADDR - RAM002_START] = data_bus;
+        RAM002[uP_ADDR - RAM002_START] = DATA_IN;
       }
       else
       // RAM003?
       if ( (uP_ADDR <= RAM003_END) && (RAM003_START <= uP_ADDR) ) {
-        RAM002[uP_ADDR - RAM003_START] = data_bus;
+        RAM002[uP_ADDR - RAM003_START] = DATA_IN;
       }
       
     }
@@ -207,7 +190,6 @@ ISR(TIMER1_COMPA_vect) {
 }
 
 void dumpInfo() {
-  // sprintf(tmp, "%0.4X %0.2X %s %d\n", uP_ADDR, data_bus, (RWB ? "r" : "W" ), _READ(SYNC_PIN) );
   sprintf(tmp, "%0.4X %0.2X %s %d\n", uP_ADDR, (RWB ? DATA_OUT : DATA_IN ), (RWB ? "r" : "W" ), _READ(SYNC_PIN) );
   Serial.write(tmp);
 }
