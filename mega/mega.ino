@@ -40,7 +40,7 @@
 word uP_ADDR = 0;
 byte uP_DATA = 0;
 
-#define DELAY 250
+#define DELAY 0
 
 #include "mmap.h"
 
@@ -159,7 +159,7 @@ void loop() {
     }
     
     // dump info on serial
-    dumpInfo();
+    //dumpInfo();
 
   } else 
   ////////////////////////////////////////////////////////////
