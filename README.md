@@ -105,3 +105,5 @@ Here are some awesome projects. From some of them I have taken inspiration, from
 
 - [W65c02s Datasheet, February 2004](http://datasheets.chipdb.org/Western%20Design/W65C02S.pdf)
 - [W65c02s Datasheet, February 2020](https://www.westerndesigncenter.com/wdc/documentation/w65c02s.pdf)
+- [ca65 Users Guide](https://cc65.github.io/doc/ca65.html)
+- [6502 Instruction Set](https://www.masswerk.at/6502/6502_instruction_set.html)
