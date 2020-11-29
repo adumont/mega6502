@@ -19,16 +19,22 @@ _init:
 
 _start:
     ; PROGRAM GOES HERE!
+    
 
 
 ; Constants macros can go here. several way to define them:
 VAL1 = $2000
-.define   VAL2 $1000
+.define   VAL2  $1000
 
 .segment  "RODATA"
 ; constant in memory can go here
 
+
+.ZEROPAGE
+ADDR:   .res    2   ; remember to use z:ADDR to force zeropage addressing.
+
 .segment  "DATA"
-var1:  .byte $64
-var2:  .byte %00000001
-var3:  .word $ffff
+var1:   .byte   $64
+var2:   .byte   %00000001
+var3:   .word   $ffff
+var4:   .res    10          ; reserves 10 bytes in DATA
