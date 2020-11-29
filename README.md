@@ -58,31 +58,31 @@ Let's see the output of `serialHost.py` in this case. The first column (before t
 
 ```
 EF85 00 r 1 | ef85  00           brk              SNGL 
-EF85 00 r 0 |                                     Not an instruction
-01CA 00 W 0 |                                     Not an instruction
-01C9 00 W 0 |                                     Not an instruction
-01C8 00 W 0 |                                     Not an instruction
-FFFC 00 r 0 |                                     Not an instruction
-FFFD F0 r 0 |                                     Not an instruction
+EF85 00 r 0 |
+01CA 00 W 0 |
+01C9 00 W 0 |
+01C8 00 W 0 |
+FFFC 00 r 0 |
+FFFD F0 r 0 |
 F000 AD r 1 | f000  AD .. ..     lda $....        ABS  
 F001 00 r 0 | f000  AD 00 ..     lda $..00        ABS  
 F002 20 r 0 | f000  AD 00 20     lda $2000        ABS  
-2000 80 r 0 |                                     Not an instruction
+2000 80 r 0 |
 F003 8D r 1 | f003  8D .. ..     sta $....        ABS  
 F004 00 r 0 | f003  8D 00 ..     sta $..00        ABS  
 F005 20 r 0 | f003  8D 00 20     sta $2000        ABS  
-2000 20 W 0 |                                     Not an instruction
+2000 20 W 0 |
 F006 4C r 1 | f006  4C .. ..     jmp $....        ABS  
 F007 00 r 0 | f006  4C 00 ..     jmp $..00        ABS  
 F008 F0 r 0 | f006  4C 00 F0     jmp $F000        ABS  
 F000 AD r 1 | f000  AD .. ..     lda $....        ABS  
 F001 00 r 0 | f000  AD 00 ..     lda $..00        ABS  
 F002 20 r 0 | f000  AD 00 20     lda $2000        ABS  
-2000 80 r 0 |                                     Not an instruction
+2000 80 r 0 |
 F003 8D r 1 | f003  8D .. ..     sta $....        ABS  
 F004 00 r 0 | f003  8D 00 ..     sta $..00        ABS  
 F005 20 r 0 | f003  8D 00 20     sta $2000        ABS  
-2000 20 W 0 |                                     Not an instruction
+2000 20 W 0 |
 F006 4C r 1 | f006  4C .. ..     jmp $....        ABS  
 F007 00 r 0 | f006  4C 00 ..     jmp $..00        ABS  
 F008 F0 r 0 | f006  4C 00 F0     jmp $F000        ABS  
