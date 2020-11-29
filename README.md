@@ -92,11 +92,14 @@ Notice how bytes are replaced by ".." when the instruction is incomplete, and th
 
 # Credits
 
-Section to be completed.
+Here are some awesome projects. From some of them I have taken inspiration, from others I have copied lines of code.
 
-- Ben Eater's 6502 project, site and videos
-- Retroshield site and sources
-- Easy6502 disassembler
+- [Build a 6502 computer | Ben Eater](https://eater.net/6502): This is definitely what started all this.
+- [Retroshield for Arduino Mega | 8 Bit Force](http://www.8bitforce.com/projects/retroshield/)
+  - [RetroShield 6502 Operation](http://www.8bitforce.com/blog/2019/03/12/retroshield-6502-operation/)
+  - [RetroShield Arduino Code](https://gitlab.com/8bitforce/retroshield-arduino)
+- My disassembler "logic" started inspired by skilldrick's disassembler in [Easy 6502](https://skilldrick.github.io/easy6502/)
+- I've learned a lot by looking at olivierjan's 6502's routines in his [ROM-software-for-6502-SBC](https://github.com/olivierjan/ROM-software-for-6502-SBC)
 
 # Reference
 
