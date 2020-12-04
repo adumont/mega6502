@@ -83,11 +83,11 @@ getc:
     and RDRFBIT       ; Mask to keep only RDRFBIT
     beq @empty        ; Nothing to read
     lda SERIAL_DATA   ; Get data from serial buffer
-    sec               ; Set Carry if we got somehing
-    rts               ; Job done, return
+    sec               ; Set Carry if we got something
+    rts
 @empty:
-    clc               ; We gor norhing, clear Carry
-    rts               ; Job done, return
+    clc               ; got nothing, clear Carry
+    rts
 
 ; ----------------------------------------------------------------------------
 ; -- print a hex byte found in accumulator A
@@ -165,7 +165,7 @@ inlineprt:
 @get_char:
     lda (ADDR),y        ; get the string's char in A
     beq @end            ; if 00 we end,
-    jsr putc            ;  else we print char
+    jsr putc            ; else we print char
     jmp @nxt_char
 
 @end:
