@@ -94,74 +94,87 @@ void loop() {
   
     if (RWB) 
     ////////////////////////////////////////////////////////////
-    // 6502 READ
+    // 6502 READS
     {
-      // RWB = HIGH => READ: 6502 reading from Data Bus,
-      // check if it's a memory range driven by the Arduino Mega
-      // we should only drive the data bus (DATA_DIR = DIR_OUT)
-      // iff we own the range addressed
+      /* RWB = HIGH => READ: 6502 reading from Data Bus,
 
+         We check if the address is in a range emulated by the Arduino Mega
+
+         If it's the case:
+
+         (1) We set the DATA port to be an output with DATA_DIR = DIR_OUT;
+
+         (2) We write on the DATA port what is expected to be returned to the
+             6502, depending on what "hardware" is being addressed.
+
+         NOTICE: We should only drive the data bus (DATA_DIR = DIR_OUT)
+                 IFF we "own" the range addressed
+      */
+
+      // IO Data IN (Arduino Port F)
       if ( uP_ADDR == 0x2000 ) {
         DATA_DIR = DIR_OUT;
         DATA_OUT = PINF;
       }
-      // Serial Buffer
-      else if ( uP_ADDR == SERIAL_STAT ) {
+      else 
+      // Serial Buffer Status register
+      if ( uP_ADDR == SERIAL_STAT ) {
         DATA_DIR = DIR_OUT;
         DATA_OUT = serial_stat_reg;
       }
-      else if ( uP_ADDR == SERIAL_DATA ) {
+      else
+      // Serial Buffer Data register
+      if ( uP_ADDR == SERIAL_DATA ) {
         if ( READ(serial_stat_reg, 3) ) {
           DATA_DIR = DIR_OUT;
           DATA_OUT = Serial.read();
         }
       }
+      else
       // ROM001
-      else if ( (ROM001_START <= uP_ADDR) && (uP_ADDR <= ROM001_END) ) {
+      if ( (ROM001_START <= uP_ADDR) && (uP_ADDR <= ROM001_END) ) {
           DATA_DIR = DIR_OUT;
           DATA_OUT = pgm_read_byte_near( rom_bin + (uP_ADDR - ROM001_START));
       }
+      else
       // RAM
-      else if ( (RAM_START <= uP_ADDR) && (uP_ADDR <= RAM_END) ) {
+      if ( (RAM_START <= uP_ADDR) && (uP_ADDR <= RAM_END) ) {
           DATA_DIR = DIR_OUT;
           DATA_OUT = RAM[uP_ADDR - RAM_START];
       }
 
-    } else 
+    } else
+    
     ////////////////////////////////////////////////////////////
-    // 6502 WRITE
-    {  
-      // RWB = LOW => Write: 6502 writting to Data Bus, we read
+    // 6502 WRITES
+    
+    {
+      // RWB = LOW => "Write": 6502 is writting to the Data Bus: we read DATA_IN
+      // and eventually write it to some other (emulated) HW, like IO OUT port
+      // Serial, RAM...
 
+      // IO Data OUT (Arduino Port K)
       if ( uP_ADDR == 0x2000 ) {
         PORTK = DATA_IN;
       }
-      // Serial Buffer
-      else if ( uP_ADDR == SERIAL_DATA ) {
+      else
+      // kind of "Serial Buffer"RA
+      if ( uP_ADDR == SERIAL_DATA ) {
         char c = DATA_IN; // data passed by 6502 to be written to Serial buffer
         Serial.write(c);
       }
-      // RAM?
-      else if ( (uP_ADDR <= RAM_END) && (RAM_START <= uP_ADDR) ) {
+      else
+      // RAM
+      if ( (uP_ADDR <= RAM_END) && (RAM_START <= uP_ADDR) ) {
         RAM[uP_ADDR - RAM_START] = DATA_IN;
       } 
-      else
-      // RAM002?
-      if ( (uP_ADDR <= RAM002_END) && (RAM002_START <= uP_ADDR) ) {
-        RAM002[uP_ADDR - RAM002_START] = DATA_IN;
-      }
-      else
-      // RAM003?
-      if ( (uP_ADDR <= RAM003_END) && (RAM003_START <= uP_ADDR) ) {
-        RAM002[uP_ADDR - RAM003_START] = DATA_IN;
-      }
       
     }
     
     // dump info on serial
     //dumpInfo();
 
-  } else 
+  } else
   ////////////////////////////////////////////////////////////
   // CLOCK LOW
   {
