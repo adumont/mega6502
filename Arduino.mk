@@ -8,7 +8,7 @@
 
 INO_FILE ?= $(shell basename $(CURDIR)).ino
 
-ARDUINO_IDE_VERSION ?= 1.8.6
+ARDUINO_IDE_VERSION ?= 1.8.13
 ARDUINO_DIR ?= $(HOME)/opt/arduino-$(ARDUINO_IDE_VERSION)
 BUILD_PATH ?= $(CURDIR)/.build
 CACHE_PATH ?= $(CURDIR)/.cache
