@@ -6,7 +6,8 @@
 - [Disassembling on the fly](#disassembling-on-the-fly)
   - [Example of `serialHost.py` output](#example-of-serialhostpy-output)
 - [Credits](#credits)
-- [Reference](#reference)
+- [Datasheets](#datasheets)
+- [References](#references)
 
 ![](imgs/mega6502.jpg)
 
@@ -101,9 +102,16 @@ Here are some awesome projects. From some of them I have taken inspiration, from
 - My disassembler "logic" started inspired by skilldrick's disassembler in [Easy 6502](https://skilldrick.github.io/easy6502/)
 - I've learned a lot by looking at olivierjan's 6502's routines in his [ROM-software-for-6502-SBC](https://github.com/olivierjan/ROM-software-for-6502-SBC)
 
-# Reference
+# Datasheets
 
-- [W65c02s Datasheet, February 2004](http://datasheets.chipdb.org/Western%20Design/W65C02S.pdf)
-- [W65c02s Datasheet, February 2020](https://www.westerndesigncenter.com/wdc/documentation/w65c02s.pdf)
+- [W65C02S 8–bit Microprocessor](datasheets/w65c02s.pdf)
+- [W65C22S Versatile Interface Adapter (VIA)](datasheets/wdc_W65C22S_datasheet_mar_2004.pdf)
+- [UM61256FK-15 32K x 8 Bit SRAM](datasheets/UM61256FK-15_SRAM.pdf)
+- [SN74HC00 Quadruple 2-Input NAND Gates](datasheets/SN74HC00.pdf)
+- [SN74HC138 3-Line To 8-Line Decoders/Demultiplexers](datasheets/SN74HC138.pdf)
+- [SN74HC245 Octal Bus Transceivers With 3-State Outputs](datasheets/SN74HC245.pdf)
+
+# References
+
 - [ca65 Users Guide](https://cc65.github.io/doc/ca65.html)
 - [6502 Instruction Set](https://www.masswerk.at/6502/6502_instruction_set.html)
