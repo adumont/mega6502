@@ -110,7 +110,7 @@ Here are some awesome projects. From some of them I have taken inspiration, from
 - [SN74HC00 Quadruple 2-Input NAND Gates](datasheets/SN74HC00.pdf)
 - [SN74HC138 3-Line To 8-Line Decoders/Demultiplexers](datasheets/SN74HC138.pdf)
 - [SN74HC245 Octal Bus Transceivers With 3-State Outputs](datasheets/SN74HC245.pdf)
-
+- [HD44780U LCD Controller/Driver](datasheets/HD44780.pdf)
 # References
 
 - [ca65 Users Guide](https://cc65.github.io/doc/ca65.html)
