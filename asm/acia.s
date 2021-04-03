@@ -98,19 +98,22 @@ _start:
 loop:
     jsr acia_receive_char
 
-    ; ldx #3
-    ; jsr lcd_gotoline
+    sta z:CHAR          ; save char in CHAR
 
-    ; pha                 ; save char
-    ; jsr print_char      ; print char on LCD
+    ldx #3
+    jsr lcd_gotoline
 
-    ; lda #' '
-    ; jsr print_char      ; print space on LCD
+    lda z:CHAR          ; restore char
+    jsr print_char      ; print char on LCD
 
-    ; pla                 ; restore char
-    ; jsr PrintByte       ; print char as hexadecimal on LCD
+    lda #' '
+    jsr print_char      ; print space on LCD
+
+    lda z:CHAR          ; restore char
+    jsr PrintByte       ; print char as hexadecimal on LCD
 
     ; echo back the char received
+    lda z:CHAR          ; restore char
     jsr acia_send_char
 
     jmp loop
@@ -282,9 +285,10 @@ LCD_LINES_ADDR: .byte $00, $40, $14, $54
 
 .ZEROPAGE
 ADDR:    .res    2   ; // NOTICE remember to use z:ADDR to force zeropage addressing.
+CHAR:    .res    1
 
 .DATA
 SAVE_A:  .res    1
 SAVE_X:  .res    1
 SAVE_Y:  .res    1
-COUNTER:  .res    1
+COUNTER: .res    1
