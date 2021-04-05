@@ -38,6 +38,15 @@
 .define   ACIA_CMD   ACIA+$2 ; 
 .define   ACIA_CTRL  ACIA+$3 ; 
 
+; 6551
+.struct sACIA            ; Asynchronous Communications Interface Adapter
+    .org    $4200
+    DATA    .byte
+    STATUS  .byte
+    CMD     .byte       ; Command register
+    CTRL    .byte       ; Control register
+.endstruct
+
 
 _init:
     cli ; clear the interrupt-disable bit so the processor will respond to interrupts
@@ -110,6 +119,14 @@ loop:
     jsr print_char      ; print space on LCD
 
     lda z:CHAR          ; restore char
+    jsr PrintByte       ; print char as hexadecimal on LCD
+
+    inc COUNTER
+
+    lda #' '
+    jsr print_char      ; print space on LCD
+
+    lda COUNTER
     jsr PrintByte       ; print char as hexadecimal on LCD
 
     ; echo back the char received
