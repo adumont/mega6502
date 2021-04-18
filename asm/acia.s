@@ -95,7 +95,11 @@ _start:
 ; ACIA setup
 
     stz ACIA_STAT       ; Programmed reset ACIA (data in A is "don't care")
-    stz ACIA_CTRL       ; 16x EXTERNAL CLOCK, External Receiver Clock, 8 data word length, 1 stop bit
+
+    ; stz ACIA_CTRL       ; 16x EXTERNAL CLOCK, External Receiver Clock, 8 data word length, 1 stop bit
+
+    lda #%00011110      ; SBR: 9600, RCS: baud rate
+    sta ACIA_CTRL
 
     lda #%00001011     ; set specific modes and functions:
                         ;   no parity, no echo, no Tx interrupt
@@ -176,9 +180,8 @@ acia_send_char:
     and #%00010000      ; Bit 4: Transmitter Data Register Empty?
     beq :-              ; 0 - Not Empty, repeat
     pla                 ; restore char
-    ; jsr delay
 
-    sta ACIA_DATA       ; send
+    sta ACIA_DATA       ; send char
     rts
 
 acia_receive_char:
