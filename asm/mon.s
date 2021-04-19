@@ -1,9 +1,16 @@
 
 	*= $8000
 
-ADDR	.= $0A		; 2 bytes, an address
+ADDR	.= $FE		; 2 bytes, an address
+
+BYTE	.= $0300
 IN 	.= $0200	; here we'll store up to 15 byte
 			; for the command
+
+RES_vec
+    	CLD             ; clear decimal mode
+    	LDX #$FF
+    	TXS             ; set the stack pointer
 
 loop:	
 	LDA #'?'
@@ -13,13 +20,13 @@ loop:
 
 	JSR getline
 	
-	CMP #$1B	; ESC
-	BEQ cmd_esc
-	
 	CMP #$0d ; LF
 	BEQ cmd_return
 	
-	JMP make_upper
+	CMP #$1B	; ESC
+	BEQ cmd_esc
+	
+	; CHECK do we ever get here??
 
 put_newline:
 	; output a CR+LF
@@ -31,7 +38,7 @@ put_newline:
 
 cmd_esc:
 	; here we do whatever to handle an ESC
-	lda #'E'
+	LDA #'E'
 	JSR putc
 	lda #'S'
 	JSR putc
@@ -44,13 +51,15 @@ cmd_return:
 	; here we do whatever to handle a RETURN
 	
 	CPX #0	; user has just hit return again?
-	BNE x_over_4
-	
+	BNE is_it_1_char
+
+	; User has just hit return
+	; we increment ADDR,show it and show value
 	INC ADDR	; ADDR++
-	BNE skip_inc_hi
+	BNE show_addr
 	INC ADDR+1
-	; JSR print_addr
-skip_inc_hi:
+
+show_addr:
 	LDA ADDR+1
 	JSR print_byte
 	LDA ADDR
@@ -58,7 +67,31 @@ skip_inc_hi:
 	
 	JMP show_value	; show val at ADDR
 	
-x_over_4:
+is_it_1_char:
+	CPX #1	; user has entered one char?
+	BNE is_it_an_addr
+	
+	LDA IN+1
+	CMP #'.' ; edit
+	BNE put_newline
+	
+	; User has typed '.' EDIT!
+	; get a byte
+	
+	LDA #'='
+	JSR putc
+	JSR getline
+	
+	CMP #$1B	; ESC
+	BEQ cmd_esc
+	
+	JSR scan_ascii_byte
+	
+	STA (ADDR),y
+	
+	JMP put_newline
+
+is_it_an_addr:
 	CPX #4
 	BMI err_not_enough_char
 	
@@ -71,21 +104,11 @@ show_value:
 
 	LDY #0
 	LDA (ADDR),y
-	
-	PHA	; save A for 2nd nibble
-	LSR	; here we shift right
-	LSR	; to get HI nibble
-	LSR
-	LSR
-	JSR nibble_value_to_asc
-	JSR putc
+	JSR print_byte
 
-	PLA
-	AND #$0F ; LO nibble
-	JSR nibble_value_to_asc
-	JSR putc
-	
+; put new line and repeat
 	JMP put_newline
+
 	
 err_not_enough_char:
 	JMP loop
@@ -237,4 +260,40 @@ scan_ascii_addr:
 	STA ADDR+1
 	RTS
 
+scan_ascii_byte:
+	LDX #2
+	
+	LDA IN,X	; load char into A
+	JSR nibble_asc_to_value
+	
+	STA BYTE
+	
+	DEX
+	LDA IN,X	; load char into A
+	JSR nibble_asc_to_value
+	ASL
+	ASL
+	ASL
+	ASL
+	ORA BYTE
+	STA BYTE
+	RTS
+
 msg	.BYTE "Canceled", 0
+
+
+
+
+IRQ_vec
+    RTI
+ 
+NMI_vec
+    RTI
+
+; system vectors
+ 
+    *=  $FFFA
+ 
+    .word   NMI_vec     ; NMI vector
+    .word   RES_vec     ; RESET vector
+    .word   IRQ_vec     ; IRQ vector
