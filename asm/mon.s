@@ -4,8 +4,8 @@
 ADDR	.= $FE		; 2 bytes, an address
 
 BYTE	.= $0300
-IN 	.= $0200	; here we'll store up to 15 byte
-			; for the command
+LEN 	.= $0200	; Length of CMD
+CMD	.= $0201	; CMD string
 
 RES_vec
     	CLD             ; clear decimal mode
@@ -22,11 +22,17 @@ loop:
 	
 	CMP #$0d ; LF
 	BEQ cmd_return
+	; here user hit ESC
 	
-	CMP #$1B	; ESC
-	BEQ cmd_esc
-	
-	; CHECK do we ever get here??
+cmd_esc:
+	; here we do whatever to handle an ESC
+	LDA #'E'
+	JSR putc
+	lda #'S'
+	JSR putc
+	lda #'C'
+	JSR putc
+	; fall through to  put_newline
 
 put_newline:
 	; output a CR+LF
@@ -36,28 +42,30 @@ put_newline:
 	JSR putc
 	JMP loop
 
-cmd_esc:
-	; here we do whatever to handle an ESC
-	LDA #'E'
-	JSR putc
-	lda #'S'
-	JSR putc
-	lda #'C'
-	JSR putc
-	
-	JMP put_newline
-
 cmd_return:
 	; here we do whatever to handle a RETURN
 	
-	CPX #0	; user has just hit return again?
-	BNE is_it_1_char
+	; decision tree depending on the length
+	; (length is still stored in X at this pointtp)
 
+	CPX #0	; user has just hit return again?
+	BEQ user_hit_return
+
+	LDA CMD	 ; first char
+	CMP #'.'
+	BEQ dot_cmd
+
+	CPX #4
+	BEQ it_is_an_addr
+	JMP error
+
+user_hit_return:
 	; User has just hit return
 	; we increment ADDR,show it and show value
-	INC ADDR	; ADDR++
-	BNE show_addr
-	INC ADDR+1
+	INC ADDR	; ADDR LO++
+	BNE show_addr	;
+	INC ADDR+1	; ADDR HI++
+	; fall through to show_addr
 
 show_addr:
 	LDA ADDR+1
@@ -65,38 +73,43 @@ show_addr:
 	LDA ADDR
 	JSR print_byte
 	
-	JMP show_value	; show val at ADDR
-	
-is_it_1_char:
-	CPX #1	; user has entered one char?
-	BNE is_it_an_addr
-	
-	LDA IN+1
+	JMP show_value	; show val at ADDR & loop
+
+dot_cmd:
+	LDX #1
+	JSR scan_ascii_byte
+
+	STA (ADDR),y
+
+	JMP put_newline
+
+only_1_char:
+	LDA CMD
 	CMP #'.' ; edit
 	BNE put_newline
-	
+
 	; User has typed '.' EDIT!
 	; get a byte
-	
+
 	LDA #'='
 	JSR putc
 	JSR getline
-	
+
 	CMP #$1B	; ESC
 	BEQ cmd_esc
-	
+
+	LDX #0		; advance to next char
 	JSR scan_ascii_byte
-	
+
 	STA (ADDR),y
-	
+
 	JMP put_newline
 
-is_it_an_addr:
-	CPX #4
-	BMI err_not_enough_char
-	
+it_is_an_addr:
+	LDX #0
 	JSR scan_ascii_addr
 	; address in ADDR
+	; fall through to show_value
 
 show_value:
 	LDA #':'
@@ -104,14 +117,32 @@ show_value:
 
 	LDY #0
 	LDA (ADDR),y
+	TAX		; we use X to save the VALUE
 	JSR print_byte
+
+	CPX #$20
+	BMI put_newline
+	CPX #$7E
+	BPL put_newline
+
+	LDA #' '
+	JSR putc
+	TXA
+	JSR putc
 
 ; put new line and repeat
 	JMP put_newline
-
+	;JMP loop ; show prompt again and getline
 	
-err_not_enough_char:
-	JMP loop
+error:
+	LDA #'E'
+	JSR putc
+	lda #'R'
+	JSR putc
+	lda #'R'
+	JSR putc
+
+	JMP put_newline ; and loop
 
 
 print_byte:
@@ -128,38 +159,7 @@ print_byte:
 	JSR nibble_value_to_asc
 	JSR putc
 	RTS
-	
-make_upper:	
-	PHA	 ; save char
-	AND #$df ; make upper case
-	
-test_r:	CMP #'R'
-	BNE test_w
-is_r:
-	JSR putc
-	lda #'o'
-	JSR putc
-	lda #'k'
-	JSR putc
-	jmp loop
 
-test_w:	CMP #'W'
-	BNE unkn
-is_w:
-	JSR putc
-	lda #'O'
-	JSR putc
-	lda #'K'
-	JSR putc
-	jmp loop
-
-unkn:	
-	PLA 	 ; restore char
-	JSR putc
-		
-	JMP loop
-	
-	
 getc:	
 	LDA IO_AREA+4
 	BEQ getc
@@ -187,7 +187,7 @@ next:
 	BMI skip_uppercase
 	AND #$DF 	; make upper case
 skip_uppercase:
-	STA IN+1,x	; save in buffer
+	STA CMD,x	; save in buffer
 	
 	CPX #$0F	; x=15 -> end line
 	BEQ eol
@@ -204,7 +204,7 @@ backspace:
 	JMP next
 
 eol:
-	STX IN
+	STX LEN
 	RTS
 
 nibble_asc_to_value:
@@ -226,74 +226,66 @@ skip:
 	RTS
 
 scan_ascii_addr:
-	LDX #4
-	
-	LDA IN,X	; load char into A
+	LDA CMD,X	; load char into A
+	JSR nibble_asc_to_value
+	ASL
+	ASL
+	ASL
+	ASL
+	STA ADDR+1
+
+	INX
+	LDA CMD,X	; load char into A
 	JSR nibble_asc_to_value
 	
+	ORA ADDR+1
+	STA ADDR+1
+
+	INX
+	LDA CMD,X	; load char into A
+	JSR nibble_asc_to_value
+	ASL
+	ASL
+	ASL
+	ASL
 	STA ADDR
 	
-	DEX
-	LDA IN,X	; load char into A
+	INX
+	LDA CMD,X	; load char into A
 	JSR nibble_asc_to_value
-	ASL
-	ASL
-	ASL
-	ASL
 	ORA ADDR
 	STA ADDR
 	
-	DEX
-	LDA IN,X	; load char into A
-	JSR nibble_asc_to_value
-	
-	STA ADDR+1
-	
-	DEX
-	LDA IN,X	; load char into A
-	JSR nibble_asc_to_value
-	ASL
-	ASL
-	ASL
-	ASL
-	ORA ADDR+1
-	STA ADDR+1
 	RTS
 
 scan_ascii_byte:
-	LDX #2
-	
-	LDA IN,X	; load char into A
+	LDA CMD,X	; load char into A
 	JSR nibble_asc_to_value
-	
+	ASL
+	ASL
+	ASL
+	ASL
 	STA BYTE
-	
-	DEX
-	LDA IN,X	; load char into A
+
+	INX
+	LDA CMD,X	; load char into A
 	JSR nibble_asc_to_value
-	ASL
-	ASL
-	ASL
-	ASL
 	ORA BYTE
 	STA BYTE
 	RTS
 
-msg	.BYTE "Canceled", 0
-
-
-
+msg	.BYTE "Monitor v0", 0
 
 IRQ_vec
     RTI
- 
+
 NMI_vec
     RTI
 
 ; system vectors
- 
+
     *=  $FFFA
- 
+
     .word   NMI_vec     ; NMI vector
     .word   RES_vec     ; RESET vector
     .word   IRQ_vec     ; IRQ vector
