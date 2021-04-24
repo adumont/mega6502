@@ -1,11 +1,7 @@
 
-	*= $8000
-
 ADDR	.= $FE		; 2 bytes, an address
 
-BYTE	.= $0300
-LEN 	.= $0200	; Length of CMD
-CMD	.= $0201	; CMD string
+	*= $8000
 
 RES_vec
     	CLD             ; clear decimal mode
@@ -276,11 +272,115 @@ scan_ascii_byte:
 
 msg	.BYTE "Monitor v0", 0
 
-IRQ_vec
-    RTI
 
+IRQ_vec
+	; Save registers
+	STA SAVE_A
+	STX SAVE_X
+	STY SAVE_Y
+	TSX		; get SP into X
+	INX		; add 3 to get real 
+	INX		; SP before IRQ
+	INX
+	STX SAVE_S
+	PLA 		; P is on stack
+	STA SAVE_P
+	PLA
+	STA SAVE_PC
+	PLA
+	STA SAVE_PC+1
+	PHA		; put P back on stack
+	LDA SAVE_PC
+	PHA
+	LDA SAVE_P
+	PHA
+	; is it a BRK?
+	LDA #$10	; position of B bit
+	BIT SAVE_P	; is B bit set, indicating BRK and not IRQ?
+	BNE BRKhandler
+
+	; for now, force jmp to BRKhandler
+	JMP BRKhandler
+	
+	PHA
+	LDA #'I'
+	JSR putc
+	LDA #'R'
+	JSR putc
+	LDA #'Q'
+	JSR putc
+	PLA
+
+	LDX SAVE_S
+	TXS
+	LDY SAVE_Y
+	LDX SAVE_X
+	LDA SAVE_A
+	RTI
+
+BRKhandler:
+	LDA #' '
+	JSR putc
+	LDA #'A'
+	JSR putc
+	LDA SAVE_A
+	JSR print_byte
+
+	LDA #' '
+	JSR putc
+	LDA #'X'
+	JSR putc
+	LDA SAVE_X
+	JSR print_byte
+
+	LDA #' '
+	JSR putc
+	LDA #'Y'
+	JSR putc
+	LDA SAVE_Y
+	JSR print_byte
+
+	LDA #' '
+	JSR putc
+	LDA #'P'
+	JSR putc
+	LDA SAVE_P
+	JSR print_byte
+
+	LDA #' '
+	JSR putc
+	LDA #'S'
+	JSR putc
+	LDA SAVE_S
+	JSR print_byte
+
+	LDA #' '
+	JSR putc
+	LDA #'P'
+	JSR putc
+	LDA #'C'
+	JSR putc
+	LDA SAVE_PC+1
+	JSR print_byte
+	LDA SAVE_PC
+	JSR print_byte
+
+	RTI
 NMI_vec
-    RTI
+	RTI
+
+
+	*= $0200
+
+BYTE	.DS 1
+LEN 	.DS 1	; Length of CMD
+CMD	.DS 16	; CMD string
+SAVE_A  .DS 1
+SAVE_X  .DS 1
+SAVE_Y  .DS 1
+SAVE_S  .DS 1
+SAVE_P  .DS 1
+SAVE_PC .DS 2
 
 ; system vectors
 
