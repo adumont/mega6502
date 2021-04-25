@@ -51,6 +51,9 @@ cmd_return:
 	CMP #'.'
 	BEQ dot_cmd
 
+	CMP #'X'
+	BEQ exec_cmd
+
 	CPX #4
 	BEQ it_is_an_addr
 	JMP error
@@ -71,30 +74,14 @@ show_addr:
 	
 	JMP show_value	; show val at ADDR & loop
 
+exec_cmd:
+	LDX #1
+	JSR scan_ascii_addr	; put in ADDR
+	JMP (ADDR)
+	; we don't know were wi'll end up...
+		
 dot_cmd:
 	LDX #1
-	JSR scan_ascii_byte
-
-	STA (ADDR),y
-
-	JMP put_newline
-
-only_1_char:
-	LDA CMD
-	CMP #'.' ; edit
-	BNE put_newline
-
-	; User has typed '.' EDIT!
-	; get a byte
-
-	LDA #'='
-	JSR putc
-	JSR getline
-
-	CMP #$1B	; ESC
-	BEQ cmd_esc
-
-	LDX #0		; advance to next char
 	JSR scan_ascii_byte
 
 	STA (ADDR),y
@@ -365,7 +352,15 @@ BRKhandler:
 	LDA SAVE_PC
 	JSR print_byte
 
-	RTI
+	LDX SAVE_S
+	TXS
+	LDY SAVE_Y
+	LDX SAVE_X
+	LDA SAVE_A
+
+	JMP loop
+	;RTI
+	
 NMI_vec
 	RTI
 
