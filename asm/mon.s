@@ -15,8 +15,8 @@ inc_addr:
 	INC ADDR	; ADDR LO++
 	BNE put_newline	; show_addr
 	INC ADDR+1	; ADDR HI++
-	JMP put_newline
-	
+	; fallback to put_newline
+
 put_newline:
 	; output a CR+LF
 	LDA #$0a ; CR
@@ -95,7 +95,7 @@ cmd_return:
 
 	LDA CMD	 ; first char
 
-	CMP #'X'		; starts with X
+	CMP #'x'		; starts with X
 	BEQ exec_cmd
 
 	CMP #'''		; starts with quote
