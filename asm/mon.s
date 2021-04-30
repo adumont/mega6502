@@ -8,7 +8,60 @@ RES_vec
     	LDX #$FF
     	TXS             ; set the stack pointer
 
+	JMP loop
+
+inc_addr:
+	; we increment ADDR
+	INC ADDR	; ADDR LO++
+	BNE put_newline	; show_addr
+	INC ADDR+1	; ADDR HI++
+	JMP put_newline
+	
+put_newline:
+	; output a CR+LF
+	LDA #$0a ; CR
+	JSR putc
+	LDA #$0d ; LF
+	JSR putc
+	; fallback to loop
+
 loop:	
+
+; show address
+	LDA ADDR+1
+	JSR print_byte
+	LDA ADDR
+	JSR print_byte
+
+; show value at addr
+	LDA #':'
+	JSR putc
+
+	LDY #0
+	LDA (ADDR),y
+	TAX		; we use X to save the VALUE
+	JSR print_byte	; print byte at ADDR
+
+	LDA #' '
+	JSR putc
+
+	CPX #$20
+	BMI non_printable	; not printable (too low)
+	CPX #$7E
+	BPL non_printable	; not printable (too low)
+
+	TXA
+	JSR putc
+	JMP prompt
+	
+non_printable:
+	; print a blank char
+	LDA #' '
+	JSR putc
+
+prompt:	
+	LDA #' '
+	JSR putc
 	LDA #'?'
 	JSR putc
 	LDA #' '
@@ -30,13 +83,6 @@ cmd_esc:
 	JSR putc
 	; fall through to  put_newline
 
-put_newline:
-	; output a CR+LF
-	LDA #$0a ; CR
-	JSR putc
-	LDA #$0d ; LF
-	JSR putc
-	JMP loop
 
 cmd_return:
 	; here we do whatever to handle a RETURN
@@ -45,77 +91,50 @@ cmd_return:
 	; (length is still stored in X at this pointtp)
 
 	CPX #0	; user has just hit return again?
-	BEQ user_hit_return
+	BEQ inc_addr
 
 	LDA CMD	 ; first char
-	CMP #'.'
-	BEQ dot_cmd
 
-	CMP #'X'
+	CMP #'X'		; starts with X
 	BEQ exec_cmd
 
-	CPX #4
+	CMP #'''		; starts with quote
+	BEQ it_is_a_char
+
+	CPX #2			; 2 chars --> a value
+	BEQ it_is_a_value
+
+	CPX #4			; 4 chars --> an addr
 	BEQ it_is_an_addr
+
+	; ELSE
 	JMP error
 
-user_hit_return:
-	; User has just hit return
-	; we increment ADDR,show it and show value
-	INC ADDR	; ADDR LO++
-	BNE show_addr	;
-	INC ADDR+1	; ADDR HI++
-	; fall through to show_addr
-
-show_addr:
-	LDA ADDR+1
-	JSR print_byte
-	LDA ADDR
-	JSR print_byte
-	
-	JMP show_value	; show val at ADDR & loop
 
 exec_cmd:
-	LDX #1
-	JSR scan_ascii_addr	; put in ADDR
 	JMP (ADDR)
 	; we don't know were wi'll end up...
+
+it_is_a_char:
+	LDX #1		; we load the 2nd byte of CMD
+	LDA CMD,x	; into A
+	
+	STA (ADDR),y	; and store at ADDR
+
+	JMP inc_addr
 		
-dot_cmd:
-	LDX #1
+it_is_a_value:
+	LDX #0
 	JSR scan_ascii_byte
 
 	STA (ADDR),y
 
-	JMP put_newline
+	JMP inc_addr
 
 it_is_an_addr:
 	LDX #0
 	JSR scan_ascii_addr
-	; address in ADDR
-	; fall through to show_value
-
-show_value:
-	LDA #':'
-	JSR putc
-
-	LDY #0
-	LDA (ADDR),y
-	TAX		; we use X to save the VALUE
-	JSR print_byte
-
-	CPX #$20
-	BMI put_newline
-	CPX #$7E
-	BPL put_newline
-
-	LDA #' '
-	JSR putc
-	TXA
-	JSR putc
-
-; put new line and repeat
 	JMP put_newline
-	;JMP loop ; show prompt again and getline
 	
 error:
 	LDA #'E'
@@ -126,7 +145,6 @@ error:
 	JSR putc
 
 	JMP put_newline ; and loop
-
 
 print_byte:
 	PHA	; save A for 2nd nibble
@@ -166,10 +184,10 @@ next:
 	CMP #$08 	; Backspace	
 	BEQ backspace
 
-	CMP #'9'+1
-	BMI skip_uppercase
-	AND #$DF 	; make upper case
-skip_uppercase:
+;	CMP #'9'+1
+;	BMI skip_uppercase
+;	AND #$DF 	; make upper case
+;skip_uppercase:
 	STA CMD,x	; save in buffer
 	
 	CPX #$0F	; x=15 -> end line
