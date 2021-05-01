@@ -1,12 +1,32 @@
+; Monitor by Adumont
+; 
+; Monitor will show content at ADDR.
+; You can type:
+; - an ADDR (4 char, hex) --> set ADDR
+; - a value (2 char, hex) --> store value at ADDR
+; - ' followed by a char  --> store the char at ADDR
+; - j --> restore registers to saved values and jump to ADDR
+; - c --> continue (after a BRK). restore registers to saved values, set ADDR to saved PC (after BRK) and jump to ADDR
+;
+; Registers manipulation (saved values):
+; - aXX : store XX (hex) in A
+; - xXX : store XX (hex) in X
+; - yXX : store XX (hex) in Y
+; - sXX : store XX (hex) in S
+; - pXX : store XX (hex) in P
+; - r   : print registers value
+
+
 
 ADDR	.= $FE		; 2 bytes, an address
 
 	*= $8000
 
 RES_vec
-    	CLD             ; clear decimal mode
+   	CLD             ; clear decimal mode
     	LDX #$FF
     	TXS             ; set the stack pointer
+    	STX SAVE_S
 
 	JMP loop
 
@@ -18,11 +38,7 @@ inc_addr:
 	; fallback to put_newline
 
 put_newline:
-	; output a CR+LF
-	LDA #$0a ; CR
-	JSR putc
-	LDA #$0d ; LF
-	JSR putc
+	JSR CRLF
 	; fallback to loop
 
 loop:	
@@ -81,8 +97,7 @@ cmd_esc:
 	JSR putc
 	lda #'C'
 	JSR putc
-	; fall through to  put_newline
-
+	JMP put_newline
 
 cmd_return:
 	; here we do whatever to handle a RETURN
@@ -95,11 +110,17 @@ cmd_return:
 
 	LDA CMD	 ; first char
 
-	CMP #'x'		; starts with X
-	BEQ exec_cmd
+	CMP #'r'		; Print Registers
+	BEQ preg_cmd
 
 	CMP #'''		; starts with quote
 	BEQ it_is_a_char
+
+	CMP #'j'		; Jmp
+	BEQ exec_cmd
+
+	CMP #'c'		; Continue
+	BEQ cont_cmd
 
 	CPX #2			; 2 chars --> a value
 	BEQ it_is_a_value
@@ -107,11 +128,49 @@ cmd_return:
 	CPX #4			; 4 chars --> an addr
 	BEQ it_is_an_addr
 
+	CPX #3
+	BNE error
+
+	TAY	; we store the letter in Y
+
+	LDX #1
+	JSR scan_ascii_byte
+	
+	CPY #'a'		; edit A
+	BEQ editA_cmd
+
+	CPY #'x'		; edit X
+	BEQ editX_cmd
+
+	CPY #'y'		; edit Y
+	BEQ editY_cmd
+
+	CPY #'s'		; edit S
+	BEQ editS_cmd
+
+	CPY #'p'		; edit P
+	BEQ editP_cmd
+
 	; ELSE
 	JMP error
 
+cont_cmd:
+	LDA SAVE_PC
+	STA ADDR
+	LDA SAVE_PC+1
+	STA ADDR+1
+	; fallback to exec_cmd
 
 exec_cmd:
+	LDA SAVE_P
+	PHA
+	PLP		; transfer to P
+	LDX SAVE_S
+	TXS
+	LDY SAVE_Y
+	LDX SAVE_X
+	LDA SAVE_A
+
 	JMP (ADDR)
 	; we don't know were wi'll end up...
 
@@ -127,6 +186,7 @@ it_is_a_value:
 	LDX #0
 	JSR scan_ascii_byte
 
+	LDY #0
 	STA (ADDR),y
 
 	JMP inc_addr
@@ -135,7 +195,19 @@ it_is_an_addr:
 	LDX #0
 	JSR scan_ascii_addr
 	JMP put_newline
-	
+
+preg_cmd:
+	JSR Print_Registers
+	JMP put_newline
+
+editA_cmd:
+	sta SAVE_A
+	JMP put_newline
+
+editX_cmd:
+	sta SAVE_X
+	JMP put_newline
+
 error:
 	LDA #'E'
 	JSR putc
@@ -145,6 +217,19 @@ error:
 	JSR putc
 
 	JMP put_newline ; and loop
+
+editY_cmd:
+	sta SAVE_Y
+	JMP put_newline
+
+editS_cmd:
+	sta SAVE_S
+	JMP put_newline
+
+editP_cmd:
+	ORA #$30 ; we force bits 4 and 5 to 1
+	STA SAVE_P
+	JMP put_newline
 
 print_byte:
 	PHA	; save A for 2nd nibble
@@ -158,6 +243,14 @@ print_byte:
 	PLA
 	AND #$0F ; LO nibble
 	JSR nibble_value_to_asc
+	JSR putc
+	RTS
+
+CRLF:
+	; output a CR+LF
+	LDA #$0a ; CR
+	JSR putc
+	LDA #$0d ; LF
 	JSR putc
 	RTS
 
@@ -324,8 +417,19 @@ IRQ_vec
 	RTI
 
 BRKhandler:
-	LDA #' '
-	JSR putc
+	JSR Print_Registers
+	
+	LDX SAVE_S
+	TXS
+	LDY SAVE_Y
+	LDX SAVE_X
+	LDA SAVE_A
+
+	JMP put_newline
+	;RTI
+
+Print_Registers:
+	JSR CRLF
 	LDA #'A'
 	JSR putc
 	LDA SAVE_A
@@ -369,15 +473,7 @@ BRKhandler:
 	JSR print_byte
 	LDA SAVE_PC
 	JSR print_byte
-
-	LDX SAVE_S
-	TXS
-	LDY SAVE_Y
-	LDX SAVE_X
-	LDA SAVE_A
-
-	JMP loop
-	;RTI
+	RTS
 	
 NMI_vec
 	RTI
