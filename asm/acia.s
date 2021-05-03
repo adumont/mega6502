@@ -14,18 +14,18 @@
 .define   PORTA    VIA+$1 ; Output register for I/O Port A, with handshaking
 .define   DDRB     VIA+$2 ; I/O port B Data Direction register (1=output, 0=input)
 .define   DDRA     VIA+$3 ; I/O port A Data Direction register (1=output, 0=input)
-.define   T1CNTLO  VIA+$4 ; \ Read Timer 1 Counter LO/HI byte / Write to Timer 1 Latch LO/HI byte
-.define   T1CNTHI  VIA+$5 ; /
-.define   T1LATLO  VIA+$6 ; \ Access Timer 1 Latch LO/HI byte
-.define   T1LATHI  VIA+$7 ; /
-.define   T2LO     VIA+$8 ; Read Timer 2 LO byte & reset counter interrupt. Write LO Timer 2 but does't reset interrupt
-.define   T2HI     VIA+$9 ; Access Timer 2 HI byte, reset counter interrupt on write
-.define   VIA_SR   VIA+$A ; Serial I/O Shift register
-.define   VIA_ACR  VIA+$B ; Auxialiary Control register
-.define   VIA_PCR  VIA+$C ; Peripheral Control register
-.define   VIA_IFR  VIA+$D ; Interrupt Flag register
-.define   VIA_IER  VIA+$E ; Interrupt Enable register
-.define   PORTANO  VIA+$F ; Output register for I/O Port A, without handshaking
+.define   T1CL     VIA+$4 ; \ Read Timer 1 Counter LO/HI byte / Write to Timer 1 Latch LO/HI byte
+.define   T1CH     VIA+$5 ; /
+.define   T1LL     VIA+$6 ; \ Access Timer 1 Latch LO/HI byte
+.define   T1LH     VIA+$7 ; /
+.define   T2CL     VIA+$8 ; Read Timer 2 LO byte & reset counter interrupt. Write LO Timer 2 but does't reset interrupt
+.define   T2CH     VIA+$9 ; Access Timer 2 HI byte, reset counter interrupt on write
+.define   SR       VIA+$A ; Serial I/O Shift register
+.define   ACR      VIA+$B ; Auxialiary Control register
+.define   PCR      VIA+$C ; Peripheral Control register
+.define   IFR      VIA+$D ; Interrupt Flag register
+.define   IER      VIA+$E ; Interrupt Enable register
+.define   PORTA0   VIA+$F ; Output register for I/O Port A, without handshaking
 
 .define   E    %10000000
 .define   RW   %01000000
@@ -185,7 +185,7 @@ acia_send_char:
     rts
 
 acia_receive_char:
-:   lda ACIA_STAT       ; wait for TX empty
+:   lda ACIA_STAT       ; wait for RX full
     and #%00001000      ; Bit 3: Receiver Data Register Full?
     beq :-              ; 0 - Not Full, repeat
     lda ACIA_DATA       ; read char
@@ -212,6 +212,7 @@ lcdbusy:
 
     lda #(RW | E)
     sta PORTA
+
 
     lda PORTB
     and #%10000000
@@ -307,7 +308,11 @@ LCD_LINES_ADDR: .byte $00, $40, $14, $54
 ADDR:    .res    2   ; // NOTICE remember to use z:ADDR to force zeropage addressing.
 CHAR:    .res    1
 
+; for variables we want to have initialized, and be able to modify later. Requires copydata.s!
+; for reserving space only, use .BSS
 .DATA
+
+.BSS
 SAVE_A:  .res    1
 SAVE_X:  .res    1
 SAVE_Y:  .res    1
