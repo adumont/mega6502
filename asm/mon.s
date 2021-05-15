@@ -20,6 +20,30 @@
 
 ADDR	.= $FE		; 2 bytes, an address
 
+    
+; A trial prog that we save to ram
+; we'll run it later
+	*= $4000
+
+	LDA #$11
+	PHA
+	NOP
+	NOP
+	LDX #$44
+	PHX
+	NOP
+	NOP
+	LDY #$77
+	PHY
+	NOP
+	NOP
+
+	PHP
+	NOP
+	NOP
+
+	BRK
+
 	*= $8000
 
 RES_vec
@@ -27,6 +51,7 @@ RES_vec
     	LDX #$FF
     	TXS             ; set the stack pointer
     	STX SAVE_S
+    	CLI
 
 	JMP loop
 
@@ -376,29 +401,28 @@ IRQ_vec
 	STA SAVE_A
 	STX SAVE_X
 	STY SAVE_Y
-	TSX		; get SP into X
-	INX		; add 3 to get real 
+	TSX		; get current SP into X
+
+	LDA $0102,X	; SP+2 -> PC LO
+	STA SAVE_PC
+
+	LDA $0103,X	; SP+3 -> PC HI
+	STA SAVE_PC+1
+
+	LDA $0101,X	; SP+1 -> P
+	STA SAVE_P
+	
+	INX		; add 3 to get
 	INX		; SP before IRQ
 	INX
 	STX SAVE_S
-	PLA 		; P is on stack
-	STA SAVE_P
-	PLA
-	STA SAVE_PC
-	PLA
-	STA SAVE_PC+1
-	PHA		; put P back on stack
-	LDA SAVE_PC
-	PHA
-	LDA SAVE_P
-	PHA
-	; is it a BRK?
+
+	; is it a BRK?  ; atm P is in A
 	LDA #$10	; position of B bit
 	BIT SAVE_P	; is B bit set, indicating BRK and not IRQ?
 	BNE BRKhandler
 
-	; for now, force jmp to BRKhandler
-	JMP BRKhandler
+	; Here handle other interrupts (not BRK)
 	
 	PHA
 	LDA #'I'
@@ -409,8 +433,8 @@ IRQ_vec
 	JSR putc
 	PLA
 
-	LDX SAVE_S
-	TXS
+	; LDX SAVE_S
+	; TXS
 	LDY SAVE_Y
 	LDX SAVE_X
 	LDA SAVE_A
@@ -425,6 +449,8 @@ BRKhandler:
 	LDX SAVE_X
 	LDA SAVE_A
 
+
+	CLI
 	JMP put_newline
 	;RTI
 
@@ -497,4 +523,4 @@ SAVE_PC .DS 2
 
     .word   NMI_vec     ; NMI vector
     .word   RES_vec     ; RESET vector
-    .word   IRQ_vec     ; IRQ vector
+    .WORD   IRQ_vec     ; IRQ vector
